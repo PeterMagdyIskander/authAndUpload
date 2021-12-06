@@ -6,14 +6,14 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {CognitoUser,AuthenticationDetails} from "amazon-cognito-identity-js";
 import UserPool from "./UserPool";
 
-
+let idTokenlo;
 function App() {
   const [file, setFile] = useState(null);
   const [res, setRes] = useState("");
   const [LoginRes, setLoginRes] = useState("");
   const [idToken, setIdToken] = useState(null);
 
-  const email="7b323271-b644-4f9b-9ac8-46e444dd6fdb"
+  const email="abadeer@hotmail.com"
   const password="abadir_2000"    
   const region = "us-east-1";
   const identitypoolid = "us-east-1:2b404e3d-6bdf-404a-8f21-701f364fb12f";
@@ -41,8 +41,9 @@ function App() {
         user.authenticateUser(authDetails, {
           onSuccess: (data) => {
             console.log("onSuccess: ", data);
+            idTokenlo=data.idToken.jwtToken;
             
-            setIdToken(data.idToken.jwtToken);
+            setIdToken(JSON.stringify(data.getIdToken()));
             setLoginRes(JSON.stringify(data.idToken.jwtToken));
           },
           onFailure: (err) => {
@@ -57,23 +58,26 @@ function App() {
 
 
       
-      const s3 = new S3Client({
+       const s3 = new S3Client({
         region: region,
         credentials: fromCognitoIdentityPool({
           client: new CognitoIdentityClient({ region: region }),
           identityPoolId: identitypoolid,
+          logins:{
+            'cognito-idp.us-east-1.amazonaws.com/us-east-1_nASW5MZW5':idTokenlo,
+          }
         }),
-        logins:{
-          'cognito-idp.us-east-1.amazonaws.com/us-east-1_nASW5MZW5':idToken,
-        }
+        
       });
 
 
   async function onPicUpload() {
+    console.log(idTokenlo);
   const uploadParams = {
     Bucket: albumBucketName,
     Key: "peterUploaded",
     Body: file,
+    
   };
   try {
     const data = await s3.send(new PutObjectCommand(uploadParams));
